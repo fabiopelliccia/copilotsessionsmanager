@@ -20,32 +20,6 @@ della postazione.
 
   Il dialogo espone inoltre l'opzione **"Attach the imported sessions to this folder"**, spiegata
   in [Cartella di lavoro e visibilità](#cartella-di-lavoro-e-visibilità).
-* **Icona GitHub Copilot nella status bar → Github Copilot sessions** (solo se il plugin GitHub Copilot è
-  installato): le stesse due voci Export/Import sono disponibili anche da lì. Vedi la sezione
-  [Integrazione con GitHub Copilot](#integrazione-con-github-copilot) per i dettagli e i limiti di
-  questa integrazione non ufficiale.
-
-## Integrazione con GitHub Copilot
-
-Oltre al menu `Tools`, il plugin prova ad agganciare le stesse due azioni al **popup che si apre
-cliccando l'icona di GitHub Copilot nella status bar dell'IDE** (la striscia sottile in fondo a
-*tutta* la finestra IntelliJ — non il pannello/tool window "GitHub Copilot Chat" dove scrivi i
-messaggi, e non la sua toolbar interna con Agent/Model/Configure tools/Send).
-
-Punti da tenere presente:
-
-* **Non è possibile** aggiungere voci dentro il pannello di conversazione "GitHub Copilot Chat"
-  stesso: quel componente non espone alcun extension point pubblico per plugin di terze parti.
-* L'aggancio alla status bar usa i gruppi di azioni interni (non documentati) del plugin GitHub
-  Copilot: `copilot.statusBarPopup` (stato "Ready"), `copilot.statusBarRestartPopup` (riavvio
-  richiesto) e `copilot.statusBarErrorPopup` (errore o non loggato). Sono id privati della UI di
-  Copilot, non un'API ufficiale: una futura versione del plugin GitHub Copilot potrebbe rinominarli
-  o rimuoverli, nel qual caso la voce scompare dalla status bar senza causare errori — il menu
-  `Tools → Github Copilot sessions` resta comunque sempre disponibile come modo stabile di accesso.
-* Se la status bar dell'IDE risulta nascosta (`View → Appearance → Status Bar` deselezionato), va
-  riattivata da lì per vedere l'icona di Copilot e il relativo popup.
-* Indipendentemente dall'icona, il popup si può aprire in qualsiasi momento con **Trova azione**
-  (`Ctrl+Maiusc+A` di default) digitando `Github Copilot sessions`.
 
 ## Cosa viene esportato
 
@@ -215,19 +189,21 @@ I due casi sono distinti, perché la soluzione è diversa:
 * se l'API risponde ma non conosce una specifica conversazione, l'avviso riguarda **quella** sessione
   e va risolto ri-esportandola dal progetto a cui appartiene.
 
-### Lingua del pulsante di riavvio
+### Lingua dell'interfaccia
 
-La notifica di import espone il pulsante **"Restart IDE now"**, l'unico testo del plugin che viene
-tradotto. L'etichetta è risolta in due passaggi:
+Ogni testo del plugin è tradotto: i dialoghi di export/import, le colonne e lo stato della tabella
+delle sessioni, le notifiche di esito, gli avvisi e i messaggi di errore, oltre al pulsante
+**"Restart IDE now"** della notifica di import. Ogni etichetta è risolta negli stessi due passaggi:
 
 1. la lingua di visualizzazione dell'IDE, quando è una localizzazione esplicita (cioè quando è
    installato un language pack diverso dall'inglese);
-2. le impostazioni internazionali del sistema operativo, così il pulsante parla la lingua della
+2. le impostazioni internazionali del sistema operativo, così l'interfaccia parla la lingua della
    macchina anche su un IDE in inglese.
 
 Se nessuna delle due è tradotta si ricade sull'inglese. Oltre all'inglese sono incluse italiano,
 francese, tedesco, spagnolo, portoghese, giapponese, cinese e coreano: per aggiungerne un'altra basta
-creare `src/main/resources/messages/CopilotSessionsBundle_<lingua>.properties`.
+creare `src/main/resources/messages/CopilotSessionsBundle_<lingua>.properties` con le stesse chiavi
+del file inglese.
 
 ## Log diagnostico dell'import
 

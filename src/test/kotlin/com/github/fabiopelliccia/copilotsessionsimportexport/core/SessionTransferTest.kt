@@ -1,10 +1,12 @@
 package com.github.fabiopelliccia.copilotsessionsimportexport.core
 
 import com.google.gson.JsonParser
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -13,6 +15,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Locale
 
 class SessionTransferTest {
 
@@ -20,10 +23,20 @@ class SessionTransferTest {
     val temp = TemporaryFolder()
 
     private val sessionId = "11111111-2222-3333-4444-555555555555"
+    private val originalLocale: Locale = Locale.getDefault(Locale.Category.DISPLAY)
 
     private companion object {
         const val CWD = "cwd"
     }
+
+    // export.warning.* is localized (CopilotSessionsBundle), and some assertions below check its
+    // English wording verbatim: pin the display locale so the round trip does not depend on the
+    // regional settings of the machine running the tests.
+    @Before
+    fun forceEnglishLocale() = Locale.setDefault(Locale.Category.DISPLAY, Locale.US)
+
+    @After
+    fun restoreLocale() = Locale.setDefault(Locale.Category.DISPLAY, originalLocale)
 
     @Test
     fun `exports and imports a session into an empty home`() {

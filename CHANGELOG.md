@@ -67,9 +67,6 @@ First public release.
   label is localized in Italian, French, German, Spanish, Portuguese, Japanese, Chinese and Korean
   and follows the display language of the IDE, or the regional settings of the operating system on
   an English IDE.
-- **Entry in the GitHub Copilot status bar popup**, next to the `Tools | Github Copilot sessions`
-  menu, when the GitHub Copilot plugin is installed. This is a best-effort integration built on
-  internal action-group ids, so it degrades silently if those ids change.
 - **Schema tolerant storage access.** Tables or columns unknown to the local version of Copilot are
   ignored on both read and write, so archives stay compatible across CLI versions, and auto-generated
   integer primary keys are not copied, so an import never collides with existing rows.

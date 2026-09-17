@@ -3,6 +3,7 @@ package com.github.fabiopelliccia.copilotsessionsimportexport.core
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.Locale
 
 /**
  * Recognises the timestamp shapes Copilot writes to disk and shifts them by a fixed delta while
@@ -69,10 +70,14 @@ object TimestampShifter {
         val hasFraction = match.groupValues[4].isNotEmpty()
         val hasZ = match.groupValues[6] == "Z"
         val time = instant.atOffset(ZoneOffset.UTC)
+        // Locale.ROOT keeps the digits plain ASCII: Kotlin's String.format() otherwise follows the
+        // JVM default locale, which renders %d with native digits on machines set to Arabic,
+        // Persian and similar locales - a timestamp Copilot itself has to parse back must not.
         val base = "%04d-%02d-%02d%s%02d:%02d:%02d".format(
+            Locale.ROOT,
             time.year, time.monthValue, time.dayOfMonth, separator, time.hour, time.minute, time.second,
         )
-        val withFraction = if (hasFraction) "$base.%03d".format(time.nano / 1_000_000) else base
+        val withFraction = if (hasFraction) "$base.%03d".format(Locale.ROOT, time.nano / 1_000_000) else base
         return if (hasZ) "${withFraction}Z" else withFraction
     }
 }
