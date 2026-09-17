@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-17
+
+### Fixed
+
+- **Timestamps no longer use locale-dependent digits when shifted.** `TimestampShifter` now formats
+  every rewritten timestamp with `Locale.ROOT`: on a machine whose regional settings use non-ASCII
+  digits (for example Arabic or Persian), a shifted `created_at`/`updated_at` or `events.jsonl`
+  timestamp used to come out with native digits instead of `0`-`9`, which the Copilot CLI cannot
+  parse back, corrupting the imported session's dates.
+
+### Changed
+
+- **Fewer internal IntelliJ Platform API usages.** The IntelliJ Plugin Verifier now reports a single
+  usage of an internal API (`PluginManager.findEnabledPlugin`) instead of three, on IntelliJ 2026.2
+  and later. The GitHub Copilot plugin descriptor is resolved through one shared function reused by
+  both the session persistence bridge and the import log, and this plugin's own version for the log
+  is read from its bundled `plugin.xml` instead of enumerating every installed plugin.
+
+### Removed
+
+- **Github Copilot status bar popup entry.** The Export/Import actions are no longer added to the
+  popup of the GitHub Copilot icon in the IDE status bar; `Tools | Github Copilot sessions` remains
+  the only, stable way to reach them.
+
 ## [1.0.0] - 2026-09-17
 
 First public release.
