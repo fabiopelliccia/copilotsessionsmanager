@@ -7,12 +7,10 @@ import com.github.fabiopelliccia.copilotsessionsimportexport.core.IdeSessionRest
 import com.github.fabiopelliccia.copilotsessionsimportexport.core.ImportEnvironment
 import com.github.fabiopelliccia.copilotsessionsimportexport.core.SessionTransfer
 import com.github.fabiopelliccia.copilotsessionsimportexport.core.TransferProgress
-import com.intellij.ide.plugins.PluginManager
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.progress.ProgressIndicator
@@ -33,8 +31,9 @@ class ImportCopilotSessionsAction : CopilotSessionActionBase() {
         private const val LOG_SUBDIR = "copilot-sessions-import"
         private const val LOGS_TO_KEEP = 20
         private val LOG_FILE_STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
-        private const val PLUGIN_ID = "com.github.fabiopelliccia.copilotsessionsimportexport"
-        private const val COPILOT_PLUGIN_ID = "com.github.copilot"
+
+        /** Matches the `<version>` element `patchPluginXml` stamps into the bundled `plugin.xml`. */
+        private val VERSION_TAG = Regex("<version>([^<]*)</version>")
     }
 
     override fun perform(project: Project?, transfer: SessionTransfer) {
@@ -207,28 +206,35 @@ class ImportCopilotSessionsAction : CopilotSessionActionBase() {
     }
 
     /**
-     * Reads the descriptors through [PluginManager] only: `PluginManagerCore.getPlugin` and
-     * `PluginDescriptor.isEnabled` are respectively an internal and a deprecated API, which the
-     * IntelliJ Plugin Verifier rejects. `getPlugins()` lists the installed plugins whether they are
-     * enabled or not, so a disabled GitHub Copilot is still reported with its id and version, and
-     * `findEnabledPlugin` supplies the enabled flag on its own.
+     * Own version is read from the bundled `META-INF/plugin.xml` resource - the very file
+     * `patchPluginXml` stamps with `pluginVersion` - instead of enumerating every installed plugin
+     * through the internal `PluginManager.getPlugins()`. The Copilot plugin's id, version and
+     * enabled state come from [CopilotIdeSessionBridge.pluginStatus], the single place in this
+     * plugin that resolves another plugin's descriptor (see its kdoc for why that one lookup is
+     * unavoidable).
      */
     private fun pluginEnvironment(): ImportEnvironment {
-        val copilotId = PluginId.getId(COPILOT_PLUGIN_ID)
-        val ownId = PluginId.getId(PLUGIN_ID)
-        val installed = PluginManager.getPlugins()
-        val copilotPlugin = installed.firstOrNull { it.pluginId == copilotId }
+        val copilotStatus = CopilotIdeSessionBridge.pluginStatus()
         return ImportEnvironment(
-            pluginVersion = installed.firstOrNull { it.pluginId == ownId }?.version,
+            pluginVersion = ownPluginVersion(),
             ideBuild = runCatching { ApplicationInfo.getInstance().build.asString() }.getOrNull(),
             productName = runCatching { ApplicationNamesInfo.getInstance().fullProductName }.getOrNull(),
-            copilotPluginId = copilotPlugin?.pluginId?.idString,
-            copilotPluginVersion = copilotPlugin?.version,
-            copilotPluginEnabled = copilotPlugin?.let {
-                PluginManager.getInstance().findEnabledPlugin(copilotId) != null
-            },
+            copilotPluginId = copilotStatus?.id,
+            copilotPluginVersion = copilotStatus?.version,
+            copilotPluginEnabled = copilotStatus?.enabled,
         )
     }
+
+    /**
+     * Reads this plugin's own version straight from the `<version>` element `patchPluginXml`
+     * stamps into the bundled `META-INF/plugin.xml`, so describing it in the log needs no
+     * `PluginManager` lookup at all.
+     */
+    private fun ownPluginVersion(): String? = runCatching {
+        javaClass.classLoader.getResourceAsStream("META-INF/plugin.xml")
+            ?.use { it.readBytes().toString(Charsets.UTF_8) }
+            ?.let { VERSION_TAG.find(it)?.groupValues?.get(1) }
+    }.getOrNull()
 
     /** Keeps the log folder from growing forever: only the most recent [LOGS_TO_KEEP] files survive. */
     private fun rotateLogs(dir: Path, keep: Int = LOGS_TO_KEEP) {

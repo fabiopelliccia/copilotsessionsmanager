@@ -190,9 +190,14 @@ Ponte reflection, interamente `runCatching`:
 * **legale solo fuori dall'EDT**: entrambi i chiamanti girano dentro un `Task.Backgroundable`;
 * prima di inserire, `restore` cancella le eventuali voci già presenti con lo stesso
   `conversationId`, così un import ripetuto non duplica la riga nell'elenco;
-* il class loader del plugin Copilot si risolve con `PluginManager.getInstance().findEnabledPlugin`.
-  Da IntelliJ 2026.2 quell'accessore è `@ApiStatus.Internal` e non esiste un equivalente pubblico:
-  l'avviso del Plugin Verifier è atteso e neutralizzato tramite `failureLevel` (vedi README).
+* il class loader del plugin Copilot si risolve con `PluginManager.getInstance().findEnabledPlugin`,
+  attraverso `resolveCopilotPluginDescriptor()` in `CopilotIdeSessionBridge.kt` — l'**unico** punto
+  del plugin che invoca quell'accessore. `CopilotIdeSessionBridge.pluginStatus()` (id, versione e
+  stato abilitato del plugin Copilot per il log di import) e la versione del plugin stesso, letta
+  dal `<version>` del proprio `plugin.xml` incluso nel jar, passano dagli stessi canali senza
+  aggiungere altre chiamate. Da IntelliJ 2026.2 quell'accessore è `@ApiStatus.Internal` e non esiste
+  un equivalente pubblico: l'avviso del Plugin Verifier (1 solo utilizzo) è atteso e neutralizzato
+  tramite `failureLevel` (vedi README).
 
 ### 4.3 Formato dell'archivio
 

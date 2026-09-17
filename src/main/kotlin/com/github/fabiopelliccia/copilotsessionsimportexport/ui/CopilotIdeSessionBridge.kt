@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
@@ -16,6 +17,21 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+
+private const val COPILOT_PLUGIN_ID = "com.github.copilot"
+
+/**
+ * Resolves the GitHub Copilot plugin descriptor, when it is installed and enabled.
+ *
+ * The single call site, in the whole plugin, of `PluginManager.findEnabledPlugin`: an API the
+ * IntelliJ Plugin Verifier reports as internal (no public replacement can resolve another plugin's
+ * class loader, see the "Avvisi attesi del Plugin Verifier" section of the README). Both
+ * [CopilotIdeSessionBridge.CopilotApi.load], which needs the class loader, and
+ * [CopilotIdeSessionBridge.pluginStatus], which needs only the version for the import log, go
+ * through this one function, so the Plugin Verifier counts one usage instead of two.
+ */
+private fun resolveCopilotPluginDescriptor(): IdeaPluginDescriptor? =
+    PluginManager.getInstance().findEnabledPlugin(PluginId.getId(COPILOT_PLUGIN_ID))
 
 /**
  * Reads and writes the session record the GitHub Copilot plugin keeps inside the IDE.
@@ -36,7 +52,6 @@ import kotlin.coroutines.EmptyCoroutineContext
  */
 internal object CopilotIdeSessionBridge {
 
-    private const val COPILOT_PLUGIN_ID = "com.github.copilot"
     private const val SERVICE_CLASS = "com.github.copilot.agent.session.persistence.AgentSessionPersistenceService"
     private const val ENTITY_PACKAGE = "com.github.copilot.agent.session.persistence.nitrite.entity"
     private const val COROUTINE_SINGLETONS = "kotlin.coroutines.intrinsics.CoroutineSingletons"
@@ -45,6 +60,21 @@ internal object CopilotIdeSessionBridge {
     private val CALL_TIMEOUT_SECONDS = 60L
 
     private val gson = Gson()
+
+    /**
+     * Id, version and enabled state of the GitHub Copilot plugin, for the import log (§A) only.
+     *
+     * `null` when the plugin is not installed **or** disabled: telling the two apart would need
+     * the internal `PluginManager.getPlugins()` (which lists disabled plugins too) in addition to
+     * [resolveCopilotPluginDescriptor], and this diagnostic detail is not worth a second usage the
+     * Plugin Verifier would have to report.
+     */
+    data class CopilotPluginStatus(val id: String, val version: String?, val enabled: Boolean)
+
+    fun pluginStatus(): CopilotPluginStatus? =
+        resolveCopilotPluginDescriptor()?.let {
+            CopilotPluginStatus(id = COPILOT_PLUGIN_ID, version = it.version, enabled = true)
+        }
 
     /**
      * Outcome of [capture]. [unavailableReason] is `null` when the Copilot persistence API answered:
@@ -218,11 +248,10 @@ internal object CopilotIdeSessionBridge {
         companion object {
 
             fun load(): CopilotApi? {
-                // `findEnabledPlugin` is the public counterpart of the internal
-                // `PluginManagerCore.getPlugin`: a disabled plugin has no usable class loader
-                // anyway, so resolving only the enabled one loses nothing.
-                val loader = PluginManager.getInstance().findEnabledPlugin(PluginId.getId(COPILOT_PLUGIN_ID))
-                    ?.pluginClassLoader ?: return null
+                // A disabled plugin has no usable class loader anyway, so resolving only the
+                // enabled one loses nothing; see resolveCopilotPluginDescriptor's kdoc for why
+                // this is the only call site of the underlying internal API in the whole plugin.
+                val loader = resolveCopilotPluginDescriptor()?.pluginClassLoader ?: return null
                 val serviceClass = loader.loadClass(SERVICE_CLASS)
                 val companionField = serviceClass.getDeclaredField("Companion").apply { isAccessible = true }
                 val companion = companionField.get(null) ?: return null

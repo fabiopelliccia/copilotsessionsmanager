@@ -312,14 +312,17 @@ chi lo ha aggiunto fra i repository dei plugin.
 
 ### Avvisi attesi del Plugin Verifier
 
-`verifyPlugin` riporta **3 usi di API interne** (`PluginManager.getPlugins` e
-`PluginManager.findEnabledPlugin`) su IntelliJ 2026.2 e successive. Non è un difetto correggibile:
-il bridge verso il plugin GitHub Copilot deve risolverne il class loader, e da 2026.2 JetBrains ha
-marcato `@ApiStatus.Internal` ogni accessore in grado di farlo, senza fornire un sostituto pubblico.
-Sono avvisi, non problemi di compatibilità, e non bloccano la pubblicazione sul Marketplace; per
-questo `failureLevel` in `build.gradle.kts` li esclude, mentre continua a far fallire la build sui
-problemi reali di compatibilità, sulla struttura del plugin, sulle dipendenze mancanti e sulle API
-già pianificate per la rimozione. Il plugin risulta **Compatible** su IU-261, IU-262 e IU-263.
+`verifyPlugin` riporta **1 uso di API interne** (`PluginManager.findEnabledPlugin`) su IntelliJ
+2026.2 e successive. Non è un difetto correggibile: il bridge verso il plugin GitHub Copilot deve
+risolverne il class loader, e da 2026.2 JetBrains ha marcato `@ApiStatus.Internal` ogni accessore in
+grado di farlo, senza fornire un sostituto pubblico. `resolveCopilotPluginDescriptor()` in
+`CopilotIdeSessionBridge.kt` è l'**unico** punto del plugin che invoca quell'API: sia il bridge verso
+Copilot sia la voce diagnostica nel log di import passano da lì, così il Plugin Verifier conta un
+solo utilizzo invece di ripeterlo per ogni chiamante. È un avviso, non un problema di compatibilità,
+e non blocca la pubblicazione sul Marketplace; per questo `failureLevel` in `build.gradle.kts` lo
+esclude, mentre continua a far fallire la build sui problemi reali di compatibilità, sulla struttura
+del plugin, sulle dipendenze mancanti e sulle API già pianificate per la rimozione. Il plugin
+risulta **Compatible** su IU-261, IU-262 e IU-263.
 
 Checklist prima di un rilascio:
 
