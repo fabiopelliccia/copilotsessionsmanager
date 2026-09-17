@@ -13,8 +13,6 @@
     <ul>
       <li><b>Tools | Github Copilot sessions | Export Sessions...</b> pick one or more sessions and save the archive.</li>
       <li><b>Tools | Github Copilot sessions | Import Sessions...</b> pick an archive and choose which sessions to restore.</li>
-      <li>If the GitHub Copilot plugin is installed, the same two actions are also added to the popup menu
-      of the GitHub Copilot icon in the IDE status bar (best-effort, not an official extension point).</li>
     </ul>
     <h3>Special thanks</h3>
     <p>
@@ -25,10 +23,6 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
-    <!-- Optional: contribute an entry to the GitHub Copilot status bar menu when that plugin is installed.
-         This relies on internal (undocumented) action-group ids owned by the GitHub Copilot plugin, so it
-         is a best-effort integration, not an official extension point. -->
-    <depends optional="true" config-file="withCopilotChat.xml">com.github.copilot</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="Github Copilot sessions" displayType="BALLOON"/>

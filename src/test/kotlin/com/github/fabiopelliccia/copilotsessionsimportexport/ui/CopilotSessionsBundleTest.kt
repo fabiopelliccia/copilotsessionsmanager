@@ -1,5 +1,6 @@
 package com.github.fabiopelliccia.copilotsessionsimportexport.ui
 
+import com.github.fabiopelliccia.copilotsessionsimportexport.core.CopilotSessionsBundle
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -22,7 +22,6 @@ Plugin IntelliJ in Kotlin che esporta e importa le sessioni di chat di GitHub Co
 | `README.md` | documentazione utente e di rilascio (italiano) |
 | `LICENSE` | MIT |
 | `src/main/resources/META-INF/plugin.xml` | `<name>`, `<description>` → riquadro **Overview**, gruppo azioni del menu `Tools` |
-| `src/main/resources/META-INF/withCopilotChat.xml` | aggancio best-effort al popup della status bar di Copilot |
 | `src/main/resources/META-INF/pluginIcon*.svg` | icona su *Settings \| Plugins* e sul Marketplace |
 | `src/main/resources/icons/` | icone 16×16 del menu (variante chiara e scura) |
 | `src/main/resources/messages/CopilotSessionsBundle*.properties` | unici testi localizzati |
@@ -84,17 +83,13 @@ Plugin IntelliJ in Kotlin che esporta e importa le sessioni di chat di GitHub Co
 * **`Tools | Github Copilot sessions | Import Sessions...`** — legge un archivio, segnala le
   sessioni già presenti, applica la politica di conflitto scelta (*Skip*, *Replace*, *Duplicate*, che
   è il default) e offre l'opzione **"Attach the imported sessions to this folder"**.
-* **Popup dell'icona GitHub Copilot nella status bar** — le stesse due azioni, agganciate ai gruppi
-  interni `copilot.statusBarPopup`, `copilot.statusBarRestartPopup`, `copilot.statusBarErrorPopup`.
-  Aggancio best-effort: se quegli id spariscono, la voce scompare senza errori e il menu `Tools`
-  resta la via stabile.
 * **Notifica di esito** per entrambe le operazioni, con l'azione **"Show import log"** e, dopo un
   import riuscito, **"Restart IDE now"**.
 
 Il nome utente del plugin è **`Github Copilot sessions`** ovunque: `pluginName`, `<name>`, testo del
 gruppo `CopilotSessionsImportExport.Menu`, id del `<notificationGroup>` (che **deve** coincidere con
-`CopilotNotifications.GROUP_ID`, altrimenti le notifiche smettono di comparire), gruppo della status
-bar, titoli dei dialoghi e `producer` scritto nel manifest dell'archivio.
+`CopilotNotifications.GROUP_ID`, altrimenti le notifiche smettono di comparire), titoli dei dialoghi e
+`producer` scritto nel manifest dell'archivio.
 
 **Non** vanno mai cambiati il `<id>` del plugin né i nomi dei package: cambiare l'id farebbe apparire
 il plugin come una nuova installazione, lasciando orfana quella esistente.
@@ -195,9 +190,14 @@ Ponte reflection, interamente `runCatching`:
 * **legale solo fuori dall'EDT**: entrambi i chiamanti girano dentro un `Task.Backgroundable`;
 * prima di inserire, `restore` cancella le eventuali voci già presenti con lo stesso
   `conversationId`, così un import ripetuto non duplica la riga nell'elenco;
-* il class loader del plugin Copilot si risolve con `PluginManager.getInstance().findEnabledPlugin`.
-  Da IntelliJ 2026.2 quell'accessore è `@ApiStatus.Internal` e non esiste un equivalente pubblico:
-  l'avviso del Plugin Verifier è atteso e neutralizzato tramite `failureLevel` (vedi README).
+* il class loader del plugin Copilot si risolve con `PluginManager.getInstance().findEnabledPlugin`,
+  attraverso `resolveCopilotPluginDescriptor()` in `CopilotIdeSessionBridge.kt` — l'**unico** punto
+  del plugin che invoca quell'accessore. `CopilotIdeSessionBridge.pluginStatus()` (id, versione e
+  stato abilitato del plugin Copilot per il log di import) e la versione del plugin stesso, letta
+  dal `<version>` del proprio `plugin.xml` incluso nel jar, passano dagli stessi canali senza
+  aggiungere altre chiamate. Da IntelliJ 2026.2 quell'accessore è `@ApiStatus.Internal` e non esiste
+  un equivalente pubblico: l'avviso del Plugin Verifier (1 solo utilizzo) è atteso e neutralizzato
+  tramite `failureLevel` (vedi README).
 
 ### 4.3 Formato dell'archivio
 
@@ -319,11 +319,14 @@ invisibile. Distingue *archivio senza voce* da *voce rifiutata dal plugin Copilo
 
 ## 6. Localizzazione
 
-Il pulsante **"Restart IDE now"** è l'unico testo tradotto. `CopilotSessionsBundle` lo risolve in due
-passaggi: prima la lingua di visualizzazione dell'IDE quando è una localizzazione esplicita, poi le
+Ogni testo del plugin - dialoghi di export/import, colonne e stato della tabella delle sessioni,
+notifiche, avvisi di export/import, messaggi di errore, oltre al pulsante **"Restart IDE now"** -
+passa da `CopilotSessionsBundle`, non solo quel pulsante. La risoluzione è uguale per ogni chiave, in
+due passaggi: prima la lingua di visualizzazione dell'IDE quando è una localizzazione esplicita, poi le
 impostazioni internazionali del sistema operativo; altrimenti inglese. Oltre all'inglese: italiano,
 francese, tedesco, spagnolo, portoghese, giapponese, cinese, coreano. Per aggiungerne una basta
-creare `src/main/resources/messages/CopilotSessionsBundle_<lingua>.properties`.
+creare `src/main/resources/messages/CopilotSessionsBundle_<lingua>.properties` con le stesse chiavi
+del file inglese.
 
 ---
 
