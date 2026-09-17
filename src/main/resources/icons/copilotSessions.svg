@@ -1,0 +1,8 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- Export half of the transfer cycle, matching the green arc of the plugin badge. -->
+  <path d="M6.290 12.698A5 5 0 0 1 5.500 3.670" fill="none" stroke="#3F9F63" stroke-width="1.7" stroke-linecap="round"/>
+  <path d="M8.452 2.513L6.342 5.197L5.110 1.813Z" fill="#3F9F63"/>
+  <!-- Import half of the transfer cycle, matching the blue arc of the plugin badge. -->
+  <path d="M9.710 3.302A5 5 0 0 1 10.500 12.330" fill="none" stroke="#2F7FD8" stroke-width="1.7" stroke-linecap="round"/>
+  <path d="M7.548 13.485L9.658 10.801L10.890 14.185Z" fill="#2F7FD8"/>
+</svg>

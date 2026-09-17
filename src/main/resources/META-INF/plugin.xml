@@ -1,0 +1,57 @@
+<idea-plugin>
+    <id>com.github.fabiopelliccia.copilotsessionsimportexport</id>
+    <name>Github Copilot sessions</name>
+    <vendor url="https://github.com/Fabio-Pelliccia">Fabio Pelliccia</vendor>
+
+    <description><![CDATA[
+    Export and import GitHub Copilot chat sessions.<br/>
+    The plugin reads the local Copilot storage (<code>~/.copilot/session-store.db</code> and
+    <code>~/.copilot/session-state</code>) <b>and</b> the session record the GitHub Copilot plugin keeps inside
+    the IDE, lets you pick the conversations you want to move and writes them into a portable ZIP archive. The
+    same archive can be imported back on another machine or after a workstation reset, restoring the conversation
+    turns, the checkpoints, the session workspace files and the entry shown in the chat history.
+    <ul>
+      <li><b>Tools | Github Copilot sessions | Export Sessions...</b> pick one or more sessions and save the archive.</li>
+      <li><b>Tools | Github Copilot sessions | Import Sessions...</b> pick an archive and choose which sessions to restore.</li>
+      <li>If the GitHub Copilot plugin is installed, the same two actions are also added to the popup menu
+      of the GitHub Copilot icon in the IDE status bar (best-effort, not an official extension point).</li>
+    </ul>
+    <h3>Special thanks</h3>
+    <p>
+      A heartfelt thank you to my colleague and dear friend <b>Antonio Petricca</b>, who has followed this plugin since its
+      very early stages: his suggestions shaped the design choices, and his field testing brought to light issues
+      that no unit test would ever have detected. Thank you for the time and care you dedicated to it.
+    </p>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <!-- Optional: contribute an entry to the GitHub Copilot status bar menu when that plugin is installed.
+         This relies on internal (undocumented) action-group ids owned by the GitHub Copilot plugin, so it
+         is a best-effort integration, not an official extension point. -->
+    <depends optional="true" config-file="withCopilotChat.xml">com.github.copilot</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Github Copilot sessions" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <group id="CopilotSessionsImportExport.Menu"
+               text="Github Copilot sessions"
+               icon="/icons/copilotSessions.svg"
+               popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <action id="CopilotSessionsImportExport.Export"
+                    class="com.github.fabiopelliccia.copilotsessionsimportexport.ui.ExportCopilotSessionsAction"
+                    text="Export Sessions..."
+                    icon="/icons/copilotSessions.svg"
+                    description="Export the selected Copilot chat sessions into a ZIP archive"/>
+
+            <action id="CopilotSessionsImportExport.Import"
+                    class="com.github.fabiopelliccia.copilotsessionsimportexport.ui.ImportCopilotSessionsAction"
+                    text="Import Sessions..."
+                    icon="/icons/copilotSessions.svg"
+                    description="Restore Copilot chat sessions from a ZIP archive"/>
+        </group>
+    </actions>
+</idea-plugin>
