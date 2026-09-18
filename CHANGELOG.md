@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-09-18
+
 ### Added
 
 - **The Tools menu entries follow the language of the machine.** The `Github Copilot sessions`
