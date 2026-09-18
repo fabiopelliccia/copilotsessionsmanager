@@ -25,7 +25,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /** Tools | Github Copilot sessions | Import Sessions... */
-class ImportCopilotSessionsAction : CopilotSessionActionBase() {
+class ImportCopilotSessionsAction : CopilotSessionActionBase(
+    textKey = "action.import.text",
+    descriptionKey = "action.import.description",
+) {
 
     companion object {
         private const val LOG_SUBDIR = "copilot-sessions-import"
@@ -44,15 +47,18 @@ class ImportCopilotSessionsAction : CopilotSessionActionBase() {
         val chosen = FileChooser.chooseFile(descriptor, project, null) ?: return
         val archive: Path = chosen.toNioPath()
 
-        val manifest = runWithProgress(project, CopilotSessionsBundle.message("progress.readingArchive")) {
-            transfer.readManifest(archive)
+        // Both reads happen under the same modal progress: the dialog then only needs the two
+        // values, and no file system or database access is left on the EDT.
+        val preview = runWithProgress(project, CopilotSessionsBundle.message("progress.readingArchive")) {
+            transfer.readManifest(archive) to transfer.existingIds()
         } ?: return
+        val (manifest, existingIds) = preview
         if (manifest.sessions.isEmpty()) {
             Messages.showInfoMessage(project, CopilotSessionsBundle.message("dialog.import.empty"), TITLE)
             return
         }
 
-        val dialog = ImportSessionsDialog(project, archive, manifest, transfer)
+        val dialog = ImportSessionsDialog(project, archive, manifest, existingIds)
         if (!dialog.showAndGet()) return
         val selected = dialog.selectedSessions()
         if (selected.isEmpty()) return
@@ -184,7 +190,7 @@ class ImportCopilotSessionsAction : CopilotSessionActionBase() {
             }
 
             override fun onThrowable(error: Throwable) {
-                log.section("Riepilogo")
+                log.section("Summary")
                 log.failure("Import failed before completion", error)
                 CopilotNotifications.error(
                     project,

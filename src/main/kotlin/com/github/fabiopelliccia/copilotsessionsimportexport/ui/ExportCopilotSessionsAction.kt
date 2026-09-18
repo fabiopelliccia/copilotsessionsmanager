@@ -16,7 +16,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /** Tools | Github Copilot sessions | Export Sessions... */
-class ExportCopilotSessionsAction : CopilotSessionActionBase() {
+class ExportCopilotSessionsAction : CopilotSessionActionBase(
+    textKey = "action.export.text",
+    descriptionKey = "action.export.description",
+) {
 
     override fun perform(project: Project?, transfer: SessionTransfer) {
         val sessions = runWithProgress(project, CopilotSessionsBundle.message("progress.readingSessions")) {

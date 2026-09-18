@@ -25,11 +25,20 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <notificationGroup id="Github Copilot sessions" displayType="BALLOON"/>
+        <notificationGroup id="Github Copilot sessions"
+                           displayType="BALLOON"
+                           bundle="messages.CopilotSessionsBundle"
+                           key="notification.group.name"/>
     </extensions>
 
+    <!--
+      The `text` and `description` below are the English fallback shown before the action class is
+      loaded; every action replaces them with the translated text in its own `update()`, so the menu
+      follows the same language as the dialogs - see CopilotSessionsBundle.
+    -->
     <actions>
         <group id="CopilotSessionsImportExport.Menu"
+               class="com.github.fabiopelliccia.copilotsessionsimportexport.ui.CopilotSessionsActionGroup"
                text="Github Copilot sessions"
                icon="/icons/copilotSessions.svg"
                popup="true">

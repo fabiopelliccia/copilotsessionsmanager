@@ -38,7 +38,7 @@ class ImportDiagnostics(
         nativeSessionId: String?,
         log: ImportLog,
     ): List<String> {
-        log.section("Diagnosi di visibilità")
+        log.section("Visibility diagnosis")
         val failures = ArrayList<String>()
         for ((sourceId, session) in targets) {
             val checks = runChecks(sourceId, session, projectFolder, sourceHome)
@@ -53,10 +53,10 @@ class ImportDiagnostics(
             }
         }
 
-        log.section("Confronto con sessione nativa")
+        log.section("Comparison with a native session")
         compareWithNative(targets.map { it.second.id }.toSet(), nativeSessionId, log)
 
-        log.section("Registro IDE di Copilot")
+        log.section("Copilot IDE registry")
         dumpRegistry(log)
 
         return failures

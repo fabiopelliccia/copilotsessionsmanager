@@ -7,7 +7,6 @@ import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ex.ApplicationEx
 import com.intellij.openapi.project.Project
 import java.nio.file.Path
 
@@ -30,12 +29,16 @@ internal object CopilotNotifications {
      * `session-state` afterwards. Restarting is the only reliable way to make it ask again, so the
      * import notification offers it as a one click action instead of telling the user to do it by
      * hand. The label follows the language of the machine, see [CopilotSessionsBundle].
+     *
+     * The public `Application.restart()` is used rather than the `ApplicationEx` variant that
+     * suppresses the confirmation: the extended interface is internal API, and letting the IDE ask
+     * before it closes is the behaviour a user expects from a notification action anyway.
      */
     fun restartAction(
         text: String = CopilotSessionsBundle.message("notification.action.restartIde"),
     ): NotificationAction =
         NotificationAction.createSimpleExpiring(text) {
-            (ApplicationManager.getApplication() as ApplicationEx).restart(true)
+            ApplicationManager.getApplication().restart()
         }
 
     /**

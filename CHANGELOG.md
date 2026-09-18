@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The Tools menu entries follow the language of the machine.** The `Github Copilot sessions`
+  submenu and both actions now take their title and description from the plugin bundle, like every
+  dialog already did, instead of always showing English; the nine translations were extended
+  accordingly. The notification group shown in `Settings | Appearance & Behavior | Notifications`
+  is localized too.
+
+### Changed
+
+- **The import dialog no longer queries the database once per archived session.** The ids already
+  present on the machine are collected with one database read and one directory listing, together
+  with the manifest and under the same progress indicator, instead of opening two SQLite
+  connections per session on the UI thread while the dialog was being built.
+- **One less internal IntelliJ Platform API usage.** The `Restart IDE now` notification action uses
+  the public `Application.restart()` instead of the internal `ApplicationEx` variant. The IDE may
+  now ask for confirmation before closing, which is the standard behaviour of such an action.
+- **Failures of the GitHub Copilot bridge reach `idea.log`.** Reflection errors were only recorded
+  in the import log, which is not written at all during an export; they are now also reported
+  through the platform logger.
+- **Cancelling a progress is no longer reported as an error.** `ProcessCanceledException` is
+  re-thrown instead of being turned into an error dialog.
+- **The import log is entirely in English.** The section titles were the only Italian text left in
+  it.
+
+### Removed
+
+- **Dead code.** `WorkspaceYaml.rewriteId`, superseded by `WorkspaceYaml.rewrite`.
+
 ## [1.0.1] - 2026-09-17
 
 ### Fixed

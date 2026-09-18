@@ -24,12 +24,6 @@ object WorkspaceYaml {
         return result
     }
 
-    /** Rewrites the `id:` entry after a session has been duplicated with a fresh identifier. */
-    fun rewriteId(file: Path, oldId: String, newId: String) {
-        if (oldId == newId) return
-        rewrite(file, mapOf("id" to newId))
-    }
-
     /**
      * Replaces the value of the given top level keys, leaving every other line untouched.
      * Missing keys are appended, so a file that lost its `id` or `cwd` is repaired instead of

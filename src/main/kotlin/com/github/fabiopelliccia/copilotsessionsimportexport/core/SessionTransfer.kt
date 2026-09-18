@@ -304,6 +304,26 @@ class SessionTransfer(
     fun exists(sessionId: String): Boolean =
         store.contains(sessionId) || Files.isDirectory(stateDir.resolve(sessionId))
 
+    /**
+     * Every session id already present on this machine, collected with one database read and one
+     * directory listing.
+     *
+     * The import dialog has to answer "is this one already here?" for every session of an archive:
+     * asking [exists] once per session would open one SQLite connection per question, and it would
+     * do so on the EDT, while the dialog is being built.
+     */
+    fun existingIds(): Set<String> {
+        val ids = HashSet(store.existingIds())
+        if (Files.isDirectory(stateDir)) {
+            Files.newDirectoryStream(stateDir).use { stream ->
+                for (dir in stream) {
+                    if (Files.isDirectory(dir)) ids.add(dir.fileName.toString())
+                }
+            }
+        }
+        return ids
+    }
+
     fun import(
         archive: Path,
         sessionIds: List<String>,
@@ -344,7 +364,7 @@ class SessionTransfer(
                     CopilotSessionsBundle.message("progress.importingSession", sourceId),
                     index.toDouble() / sessionIds.size,
                 )
-                val sessionLog = log.child("Sessione $sourceId")
+                val sessionLog = log.child("Session $sourceId")
                 try {
                     val alreadyPresent = exists(sourceId)
                     sessionLog.kv("alreadyPresent", alreadyPresent)
@@ -403,7 +423,7 @@ class SessionTransfer(
 
     /** §A - everything the log needs to explain a schema or environment mismatch on the target machine. */
     private fun logEnvironment(log: ImportLog, environment: ImportEnvironment) {
-        log.section("Ambiente")
+        log.section("Environment")
         log.kv("import.localTime", java.time.LocalDateTime.now())
         log.kv("import.utcTime", Instant.now())
         log.kv("import.timeZone", java.util.TimeZone.getDefault().id)
@@ -447,7 +467,7 @@ class SessionTransfer(
 
     /** §B - the operation itself: archive, policy and relocation requested by the dialog. */
     private fun logOperationContext(log: ImportLog, archive: Path, policy: ConflictPolicy, relocateTo: String?) {
-        log.section("Contesto dell'operazione")
+        log.section("Operation context")
         log.kv("archive.path", archive.toAbsolutePath())
         log.kv("archive.sizeBytes", runCatching { Files.size(archive) }.getOrNull())
         log.kv("archive.modified", runCatching { Files.getLastModifiedTime(archive) }.getOrNull())
@@ -481,7 +501,7 @@ class SessionTransfer(
         failedChecks: List<String>,
         startedAt: Long,
     ) {
-        log.section("Riepilogo")
+        log.section("Summary")
         log.kv("imported", imported.size)
         log.kv("skipped", skipped.size)
         log.kv("failed", failures.size)

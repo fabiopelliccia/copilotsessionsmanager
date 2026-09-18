@@ -391,9 +391,9 @@ class SessionTransferTest {
 
         val content = Files.readString(logFile)
         assertTrue(content.isNotBlank())
-        assertTrue(content.contains("== AMBIENTE =="))
-        assertTrue(content.contains("== DIAGNOSI DI VISIBILITÀ =="))
-        assertTrue(content.contains("== RIEPILOGO =="))
+        assertTrue(content.contains("== ENVIRONMENT =="))
+        assertTrue(content.contains("== VISIBILITY DIAGNOSIS =="))
+        assertTrue(content.contains("== SUMMARY =="))
     }
 
     @Test

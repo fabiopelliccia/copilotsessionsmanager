@@ -9,6 +9,7 @@ import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import java.lang.reflect.Method
@@ -57,7 +58,9 @@ internal object CopilotIdeSessionBridge {
     private const val COROUTINE_SINGLETONS = "kotlin.coroutines.intrinsics.CoroutineSingletons"
 
     /** A suspend call that never returns is worse than one that fails: bound the wait. */
-    private val CALL_TIMEOUT_SECONDS = 60L
+    private const val CALL_TIMEOUT_SECONDS = 60L
+
+    private val LOG = Logger.getInstance(CopilotIdeSessionBridge::class.java)
 
     private val gson = Gson()
 
@@ -116,8 +119,10 @@ internal object CopilotIdeSessionBridge {
             }
             log.kv("ide.captured", "${captured.size}/${wanted.size}")
             CaptureResult(records = captured)
-        }.onFailure { log.failure("IDE side capture failed", it) }
-            .getOrElse { CaptureResult(unavailableReason = describe(it)) }
+        }.onFailure {
+            log.failure("IDE side capture failed", it)
+            LOG.warn("Reading the GitHub Copilot session records failed", it)
+        }.getOrElse { CaptureResult(unavailableReason = describe(it)) }
     }
 
     /**
@@ -147,7 +152,10 @@ internal object CopilotIdeSessionBridge {
             log.kv("ide.restored", record.ideSessionId)
             log.kv("ide.restoredTurns", record.turns.size())
             true
-        }.onFailure { log.failure("IDE side restore failed", it) }.getOrDefault(false)
+        }.onFailure {
+            log.failure("IDE side restore failed", it)
+            LOG.warn("Writing the GitHub Copilot session record failed", it)
+        }.getOrDefault(false)
     }
 
     private fun api(): CopilotApi? {
@@ -156,7 +164,10 @@ internal object CopilotIdeSessionBridge {
         val loaded = outcome.getOrNull()
         loadFailure = when {
             loaded != null -> null
-            outcome.isFailure -> describe(outcome.exceptionOrNull()!!)
+            outcome.isFailure -> describe(outcome.exceptionOrNull()!!).also {
+                LOG.warn("The GitHub Copilot persistence API could not be resolved", outcome.exceptionOrNull())
+            }
+
             else -> CopilotSessionsBundle.message("ide.unavailable.pluginMissing")
         }
         return loaded?.also { cachedApi = it }

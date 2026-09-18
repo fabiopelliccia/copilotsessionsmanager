@@ -6,7 +6,6 @@ import com.github.fabiopelliccia.copilotsessionsimportexport.core.CopilotPaths
 import com.github.fabiopelliccia.copilotsessionsimportexport.core.CopilotSessionsBundle
 import com.github.fabiopelliccia.copilotsessionsimportexport.core.PathMapper
 import com.github.fabiopelliccia.copilotsessionsimportexport.core.SessionInfo
-import com.github.fabiopelliccia.copilotsessionsimportexport.core.SessionTransfer
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -16,22 +15,29 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
+import java.io.File
 import java.nio.file.Path
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-/** Lets the user pick which sessions contained in an archive have to be restored. */
+/**
+ * Lets the user pick which sessions contained in an archive have to be restored.
+ *
+ * [existingIds] is read from disk by the caller, before the dialog is built: answering
+ * "already present?" here would mean one database round trip per archived session, on the EDT.
+ */
 internal class ImportSessionsDialog(
     project: Project?,
     private val archive: Path,
     manifest: ArchiveManifest,
-    transfer: SessionTransfer,
+    existingIds: Set<String>,
 ) : DialogWrapper(project, true) {
 
     private val conflictCombo = ComboBox(DefaultComboBoxModel(ConflictPolicy.entries.toTypedArray()))
@@ -42,12 +48,13 @@ internal class ImportSessionsDialog(
 
     private val panel = SessionSelectionPanel(
         rows = manifest.sessions.map { session ->
+            val alreadyPresent = session.id in existingIds
             SessionRow(
                 session = session,
                 status = CopilotSessionsBundle.message(
-                    if (transfer.exists(session.id)) "dialog.import.status.present" else "dialog.import.status.new"
+                    if (alreadyPresent) "dialog.import.status.present" else "dialog.import.status.new"
                 ),
-                selected = !transfer.exists(session.id),
+                selected = !alreadyPresent,
             )
         },
         showStatus = true,
@@ -59,7 +66,7 @@ internal class ImportSessionsDialog(
         setOKButtonText(CopilotSessionsBundle.message("dialog.import.okButton"))
         conflictCombo.selectedItem = ConflictPolicy.DUPLICATE
 
-        val projectPath = project?.basePath?.replace('/', java.io.File.separatorChar)
+        val projectPath = project?.basePath?.replace('/', File.separatorChar)
         relocateField.text = projectPath.orEmpty()
         relocateField.addBrowseFolderListener(
             project,
@@ -116,7 +123,7 @@ internal class ImportSessionsDialog(
         )
         add(
             JBLabel(CopilotSessionsBundle.message("dialog.import.relocate.hint"))
-                .apply { foreground = com.intellij.util.ui.UIUtil.getContextHelpForeground() },
+                .apply { foreground = UIUtil.getContextHelpForeground() },
             GridBagConstraints().apply {
                 gridx = 0
                 gridy = 1
